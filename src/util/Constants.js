@@ -66,7 +66,8 @@ exports.Events = {
     BATTERY_CHANGED: 'change_battery',
     INCOMING_CALL: 'call',
     REMOTE_SESSION_SAVED: 'remote_session_saved',
-    CHAT_LABELING: 'chat_labeling'
+    CHAT_LABELING: 'chat_labeling',
+    MESSAGE_LABELING: 'message_labeling'
 };
 
 /**
