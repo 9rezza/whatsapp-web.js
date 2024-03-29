@@ -660,6 +660,17 @@ class Client extends EventEmitter {
             this.emit(Events.CHAT_ARCHIVED, _chat, currState, prevState);
         });
 
+        await page.exposeFunction('onChatLabelingEvent', async (chat) => {
+            const _chat = await this.getChatById(chat.id);
+
+            /**
+             * Emitted when messages are edited
+             * @event Client#chat_labeling
+             * @param {Chat} chat
+             */
+            this.emit(Events.CHAT_LABELING, _chat);
+        });
+
         await page.exposeFunction('onEditMessageEvent', (msg, newBody, prevBody) => {
             
             if(msg.type === 'revoked'){
@@ -697,6 +708,7 @@ class Client extends EventEmitter {
             window.Store.Call.on('add', (call) => { window.onIncomingCall(call); });
             window.Store.Chat.on('remove', async (chat) => { window.onRemoveChatEvent(await window.WWebJS.getChatModel(chat)); });
             window.Store.Chat.on('change:archive', async (chat, currState, prevState) => { window.onArchiveChatEvent(await window.WWebJS.getChatModel(chat), currState, prevState); });
+            window.Store.Chat.on('change:contact.labels', async (chat) => { window.onChatLabelingEvent(chat); });
             window.Store.Msg.on('add', (msg) => { 
                 if (msg.isNewMsg) {
                     if(msg.type === 'ciphertext') {
@@ -1520,6 +1532,26 @@ class Client extends EventEmitter {
         }, labelId);
 
         return Promise.all(chatIds.map(id => this.getChatById(id)));
+    }
+
+    /**
+     * Get all Messages for a specific Label
+     * @param {string} labelId
+     * @returns {Promise<Message[]>}
+     */
+    async getMessagesByLabelId(labelId) {
+        const chatIds = await this.pupPage.evaluate(async (labelId) => {
+            const label = window.Store.Label.get(labelId);
+            const labelItems = label.labelItemCollection.getModelsArray();
+            return labelItems.reduce((result, item) => {
+                if (item.parentType === 'Msg') {
+                    result.push(item.parentId);
+                }
+                return result;
+            }, []);
+        }, labelId);
+
+        return Promise.all(chatIds.map(id => this.getMessageById(id)));
     }
 
     /**

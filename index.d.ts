@@ -1028,6 +1028,9 @@ declare namespace WAWebJS {
 
         /** Get all chats that have been assigned this Label */
         getChats: () => Promise<Chat[]>
+
+        /** Get all messages that have been assigned this Label */
+        getMessages: () => Promise<Message[]>
     }
 
     /** Options for sending a message */
