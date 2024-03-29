@@ -962,6 +962,18 @@ class Client extends EventEmitter {
     }
 
     /**
+     * Get all starred message
+     * @returns {Promise<Message[]>}
+     */
+    async getStarredMessages() {
+        const messages = await this.pupPage.evaluate(async () => {
+            return await window.WWebJS.getStarredMessages();
+        });
+
+        return messages.map(message => new Message(this, message));
+    }
+
+    /**
      * Get all current chat instances
      * @returns {Promise<Array<Chat>>}
      */

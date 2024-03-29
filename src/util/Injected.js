@@ -667,6 +667,13 @@ exports.LoadUtils = () => {
         return contacts.map(contact => window.WWebJS.getContactModel(contact));
     };
 
+    window.WWebJS.getStarredMessages = async () => {
+        const messages = window.Store.Chat.getModelsArray();
+
+        const messagePromises = messages.map(message => window.WWebJS.getMessageModel(message));
+        return await Promise.all(messagePromises);
+    };
+
     window.WWebJS.mediaInfoToFile = ({ data, mimetype, filename }) => {
         const binaryData = window.atob(data);
 
