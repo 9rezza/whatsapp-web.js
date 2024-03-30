@@ -694,6 +694,15 @@ class Client extends EventEmitter {
              */
             this.emit(Events.MESSAGE_LABELING, new Message(this, msg));
         });
+
+        await page.exposeFunction('onMessageStarredEvent', (msg) => {
+            /**
+             * Emitted when messages are edited
+             * @event Client#message_starred
+             * @param {Message} message
+             */
+            this.emit(Events.MESSAGE_STARRED, new Message(this, msg));
+        });
         
         await page.exposeFunction('onAddMessageCiphertextEvent', msg => {
             
@@ -713,6 +722,7 @@ class Client extends EventEmitter {
             window.Store.Msg.on('remove', (msg) => { if (msg.isNewMsg) window.onRemoveMessageEvent(window.WWebJS.getMessageModel(msg)); });
             window.Store.Msg.on('change:body change:caption', (msg, newBody, prevBody) => { window.onEditMessageEvent(window.WWebJS.getMessageModel(msg), newBody, prevBody); });
             window.Store.Msg.on('change:labels', async (msg) => { window.onMessageLabelingEvent(window.WWebJS.getMessageModel(msg)); });
+            window.Store.Msg.on('change:star', async (msg) => { window.onMessageStarredEvent(window.WWebJS.getMessageModel(msg)); });
             window.Store.AppState.on('change:state', (_AppState, state) => { window.onAppStateChangedEvent(state); });
             window.Store.Conn.on('change:battery', (state) => { window.onBatteryStateChangedEvent(state); });
             window.Store.Call.on('add', (call) => { window.onIncomingCall(call); });
