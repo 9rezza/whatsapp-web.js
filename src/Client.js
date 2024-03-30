@@ -1561,7 +1561,7 @@ class Client extends EventEmitter {
      * @returns {Promise<Message[]>}
      */
     async getMessagesByLabelId(labelId) {
-        const chatIds = await this.pupPage.evaluate(async (labelId) => {
+        const messageIds = await this.pupPage.evaluate(async (labelId) => {
             const label = window.Store.Label.get(labelId);
             const labelItems = label.labelItemCollection.getModelsArray();
             return labelItems.reduce((result, item) => {
@@ -1572,7 +1572,7 @@ class Client extends EventEmitter {
             }, []);
         }, labelId);
 
-        return Promise.all(chatIds.map(id => this.getMessageById(id)));
+        return Promise.all(messageIds.map(id => this.getMessageById(id)));
     }
 
     /**
