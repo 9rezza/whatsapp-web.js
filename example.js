@@ -486,6 +486,21 @@ client.on('message_ack', (msg, ack) => {
     }
 });
 
+client.on('message_labeling', async msg => {
+    // Fired whenever a message label is changed.
+    console.log(msg)
+});
+
+client.on('message_starred', async msg => {
+    // Fired whenever a message star is changed.
+    console.log(msg)
+});
+
+client.on('chat_labeling', async chat => {
+    // Fired whenever a chat label is changed.
+    console.log(chat)
+});
+
 client.on('group_join', (notification) => {
     // User has joined or been added to the group.
     console.log('join', notification);
