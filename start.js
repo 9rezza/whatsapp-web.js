@@ -36,7 +36,7 @@ client.on('ready', async (percent, message) => {
     // var chat = await client.getChatsByLabelId(1)
     // console.log(chat)
 
-    // var messages = await client.getStarredMessages()
+    // var messages = await client.getMessagesStarred()
     // console.log(messages)
 });
 

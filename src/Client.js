@@ -60,9 +60,9 @@ class Client extends EventEmitter {
         super();
 
         this.options = Util.mergeDefault(DefaultOptions, options);
-        
-        if(!this.options.authStrategy) {
-            if(Object.prototype.hasOwnProperty.call(this.options, 'session')) {
+
+        if (!this.options.authStrategy) {
+            if (Object.prototype.hasOwnProperty.call(this.options, 'session')) {
                 process.emitWarning(
                     'options.session is deprecated and will be removed in a future release due to incompatibility with multi-device. ' +
                     'Use the LocalAuth authStrategy, don\'t pass in a session as an option, or suppress this warning by using the LegacySessionAuth strategy explicitly (see https://wwebjs.dev/guide/authentication.html#legacysessionauth-strategy).',
@@ -102,20 +102,20 @@ class Client extends EventEmitter {
             page = await browser.newPage();
         } else {
             const browserArgs = [...(puppeteerOpts.args || [])];
-            if(!browserArgs.find(arg => arg.includes('--user-agent'))) {
+            if (!browserArgs.find(arg => arg.includes('--user-agent'))) {
                 browserArgs.push(`--user-agent=${this.options.userAgent}`);
             }
             // navigator.webdriver fix
             browserArgs.push('--disable-blink-features=AutomationControlled');
 
-            browser = await puppeteer.launch({...puppeteerOpts, args: browserArgs});
+            browser = await puppeteer.launch({ ...puppeteerOpts, args: browserArgs });
             page = (await browser.pages())[0];
         }
 
         if (this.options.proxyAuthentication !== undefined) {
             await page.authenticate(this.options.proxyAuthentication);
         }
-      
+
         await page.setUserAgent(this.options.userAgent);
         if (this.options.bypassCSP) await page.setBypassCSP(true);
 
@@ -133,7 +133,7 @@ class Client extends EventEmitter {
                 return error;
             };
         });
-        
+
         await page.goto(WhatsWebURL, {
             waitUntil: 'load',
             timeout: 0,
@@ -212,7 +212,7 @@ class Client extends EventEmitter {
         // Scan-qrcode selector was found. Needs authentication
         if (needAuthentication) {
             const { failed, failureEventPayload, restart } = await this.authStrategy.onAuthenticationNeeded();
-            if(failed) {
+            if (failed) {
                 /**
                  * Emitted when there has been an error while trying to restore an existing session
                  * @event Client#auth_failure
@@ -277,10 +277,10 @@ class Client extends EventEmitter {
             // Wait for code scan
             try {
                 await page.waitForSelector(INTRO_IMG_SELECTOR, { timeout: 0 });
-            } catch(error) {
+            } catch (error) {
                 if (
-                    error.name === 'ProtocolError' && 
-                    error.message && 
+                    error.name === 'ProtocolError' &&
+                    error.message &&
                     error.message.match(/Target closed/)
                 ) {
                     // something has called .destroy() while waiting
@@ -527,9 +527,9 @@ class Client extends EventEmitter {
 
         });
 
-        await page.exposeFunction('onChatUnreadCountEvent', async (data) =>{
+        await page.exposeFunction('onChatUnreadCountEvent', async (data) => {
             const chat = await this.getChatById(data.id);
-            
+
             /**
              * Emitted when the chat unread count changes
              */
@@ -646,10 +646,10 @@ class Client extends EventEmitter {
              */
             this.emit(Events.CHAT_REMOVED, _chat);
         });
-        
+
         await page.exposeFunction('onArchiveChatEvent', async (chat, currState, prevState) => {
             const _chat = await this.getChatById(chat.id);
-            
+
             /**
              * Emitted when a chat is archived/unarchived
              * @event Client#chat_archived
@@ -672,8 +672,8 @@ class Client extends EventEmitter {
         });
 
         await page.exposeFunction('onEditMessageEvent', (msg, newBody, prevBody) => {
-            
-            if(msg.type === 'revoked'){
+
+            if (msg.type === 'revoked') {
                 return;
             }
             /**
@@ -703,9 +703,9 @@ class Client extends EventEmitter {
              */
             this.emit(Events.MESSAGE_STARRED, new Message(this, msg));
         });
-        
+
         await page.exposeFunction('onAddMessageCiphertextEvent', msg => {
-            
+
             /**
              * Emitted when messages are edited
              * @event Client#message_ciphertext
@@ -729,18 +729,18 @@ class Client extends EventEmitter {
             window.Store.Chat.on('remove', async (chat) => { window.onRemoveChatEvent(await window.WWebJS.getChatModel(chat)); });
             window.Store.Chat.on('change:archive', async (chat, currState, prevState) => { window.onArchiveChatEvent(await window.WWebJS.getChatModel(chat), currState, prevState); });
             window.Store.Chat.on('change:contact.labels', async (chat) => { window.onChatLabelingEvent(chat); });
-            window.Store.Msg.on('add', (msg) => { 
+            window.Store.Msg.on('add', (msg) => {
                 if (msg.isNewMsg) {
-                    if(msg.type === 'ciphertext') {
+                    if (msg.type === 'ciphertext') {
                         // defer message event until ciphertext is resolved (type changed)
                         msg.once('change:type', (_msg) => window.onAddMessageEvent(window.WWebJS.getMessageModel(_msg)));
                         window.onAddMessageCiphertextEvent(window.WWebJS.getMessageModel(msg));
                     } else {
-                        window.onAddMessageEvent(window.WWebJS.getMessageModel(msg)); 
+                        window.onAddMessageEvent(window.WWebJS.getMessageModel(msg));
                     }
                 }
             });
-            window.Store.Chat.on('change:unreadCount', (chat) => {window.onChatUnreadCountEvent(chat);});
+            window.Store.Chat.on('change:unreadCount', (chat) => { window.onChatUnreadCountEvent(chat); });
 
             {
                 const module = window.Store.createOrUpdateReactionsModule;
@@ -751,7 +751,7 @@ class Client extends EventEmitter {
                         const parentMsgKey = window.Store.MsgKey.fromString(reaction.parentMsgKey);
                         const timestamp = reaction.timestamp / 1000;
 
-                        return {...reaction, msgKey, parentMsgKey, timestamp };
+                        return { ...reaction, msgKey, parentMsgKey, timestamp };
                     }));
 
                     return ogMethod(...args);
@@ -769,7 +769,7 @@ class Client extends EventEmitter {
         // Disconnect when navigating away when in PAIRING state (detect logout)
         this.pupPage.on('framenavigated', async () => {
             const appState = await this.getState();
-            if(!appState || appState === WAState.PAIRING) {
+            if (!appState || appState === WAState.PAIRING) {
                 await this.authStrategy.disconnect();
                 this.emit(Events.DISCONNECTED, 'NAVIGATION');
                 await this.destroy();
@@ -784,22 +784,22 @@ class Client extends EventEmitter {
         const requestedVersion = this.options.webVersion;
         const versionContent = await webCache.resolve(requestedVersion);
 
-        if(versionContent) {
+        if (versionContent) {
             await this.pupPage.setRequestInterception(true);
             this.pupPage.on('request', async (req) => {
-                if(req.url() === WhatsWebURL) {
+                if (req.url() === WhatsWebURL) {
                     req.respond({
                         status: 200,
                         contentType: 'text/html',
                         body: versionContent
-                    }); 
+                    });
                 } else {
                     req.continue();
                 }
             });
         } else {
             this.pupPage.on('response', async (res) => {
-                if(res.ok() && res.url() === WhatsWebURL) {
+                if (res.ok() && res.url() === WhatsWebURL) {
                     await webCache.persist(await res.text());
                 }
             });
@@ -822,13 +822,13 @@ class Client extends EventEmitter {
             return window.Store.AppState.logout();
         });
         await this.pupBrowser.close();
-        
+
         let maxDelay = 0;
         while (this.pupBrowser.isConnected() && (maxDelay < 10)) { // waits a maximum of 1 second before calling the AuthStrategy
             await new Promise(resolve => setTimeout(resolve, 100));
-            maxDelay++; 
+            maxDelay++;
         }
-        
+
         await this.authStrategy.logout();
     }
 
@@ -883,7 +883,7 @@ class Client extends EventEmitter {
      * @property {string[]} [stickerCategories=undefined] - Sets the categories of the sticker, (if sendMediaAsSticker is true). Provide emoji char array, can be null.
      * @property {MessageMedia} [media] - Media to be sent
      */
-    
+
     /**
      * Send a message to a specific chatId
      * @param {string} chatId
@@ -922,12 +922,12 @@ class Client extends EventEmitter {
         if (content instanceof MessageMedia) {
             internalOptions.attachment = content;
             internalOptions.isViewOnce = options.isViewOnce,
-            content = '';
+                content = '';
         } else if (options.media instanceof MessageMedia) {
             internalOptions.attachment = options.media;
             internalOptions.caption = content;
             internalOptions.isViewOnce = options.isViewOnce,
-            content = '';
+                content = '';
         } else if (content instanceof Location) {
             internalOptions.location = content;
             content = '';
@@ -952,10 +952,10 @@ class Client extends EventEmitter {
         if (internalOptions.sendMediaAsSticker && internalOptions.attachment) {
             internalOptions.attachment = await Util.formatToWebpSticker(
                 internalOptions.attachment, {
-                    name: options.stickerName,
-                    author: options.stickerAuthor,
-                    categories: options.stickerCategories
-                }, this.pupPage
+                name: options.stickerName,
+                author: options.stickerAuthor,
+                categories: options.stickerCategories
+            }, this.pupPage
             );
         }
 
@@ -974,7 +974,7 @@ class Client extends EventEmitter {
 
         return new Message(this, newMessage);
     }
-    
+
     /**
      * Searches for messages
      * @param {string} query
@@ -997,9 +997,10 @@ class Client extends EventEmitter {
      * Get all starred message
      * @returns {Promise<Message[]>}
      */
-    async getStarredMessages() {
+    async getMessagesStarred() {
         const messages = await this.pupPage.evaluate(async () => {
-            return await window.WWebJS.getStarredMessages();
+            const messages = await window.Store.Msg.getStarred();
+            return messages.map(msg => window.WWebJS.getMessageModel(msg));
         });
 
         return messages.map(message => new Message(this, message));
@@ -1054,22 +1055,22 @@ class Client extends EventEmitter {
 
         return ContactFactory.create(this, contact);
     }
-    
+
     async getMessageById(messageId) {
         const msg = await this.pupPage.evaluate(async messageId => {
             let msg = window.Store.Msg.get(messageId);
-            if(msg) return window.WWebJS.getMessageModel(msg);
+            if (msg) return window.WWebJS.getMessageModel(msg);
 
             const params = messageId.split('_');
-            if(params.length !== 3) throw new Error('Invalid serialized message id specified');
+            if (params.length !== 3) throw new Error('Invalid serialized message id specified');
 
             let messagesObject = await window.Store.Msg.getMessagesById([messageId]);
             if (messagesObject && messagesObject.messages.length) msg = messagesObject.messages[0];
-            
-            if(msg) return window.WWebJS.getMessageModel(msg);
+
+            if (msg) return window.WWebJS.getMessageModel(msg);
         }, messageId);
 
-        if(msg) return new Message(this, msg);
+        if (msg) return new Message(this, msg);
         return null;
     }
 
@@ -1130,9 +1131,9 @@ class Client extends EventEmitter {
      */
     async setDisplayName(displayName) {
         const couldSet = await this.pupPage.evaluate(async displayName => {
-            if(!window.Store.Conn.canSetMyPushname()) return false;
+            if (!window.Store.Conn.canSetMyPushname()) return false;
 
-            if(window.Store.MDBackend) {
+            if (window.Store.MDBackend) {
                 await window.Store.Settings.setPushname(displayName);
                 return true;
             } else {
@@ -1143,14 +1144,14 @@ class Client extends EventEmitter {
 
         return couldSet;
     }
-    
+
     /**
      * Gets the current connection state for the client
      * @returns {WAState} 
      */
     async getState() {
         return await this.pupPage.evaluate(() => {
-            if(!window.Store) return null;
+            if (!window.Store) return null;
             return window.Store.AppState.state;
         });
     }
@@ -1244,7 +1245,7 @@ class Client extends EventEmitter {
         unmuteDate = unmuteDate ? unmuteDate.getTime() / 1000 : -1;
         await this.pupPage.evaluate(async (chatId, timestamp) => {
             let chat = await window.Store.Chat.get(chatId);
-            await chat.mute.mute({expiration: timestamp, sendDevice:!0});
+            await chat.mute.mute({ expiration: timestamp, sendDevice: !0 });
         }, chatId, unmuteDate || -1);
     }
 
@@ -1281,11 +1282,11 @@ class Client extends EventEmitter {
                 const chatWid = window.Store.WidFactory.createWid(contactId);
                 return await window.Store.ProfilePic.profilePicFind(chatWid);
             } catch (err) {
-                if(err.name === 'ServerStatusCodeError') return undefined;
+                if (err.name === 'ServerStatusCodeError') return undefined;
                 throw err;
             }
         }, contactId);
-        
+
         return profilePic ? profilePic.eurl : undefined;
     }
 
@@ -1299,8 +1300,8 @@ class Client extends EventEmitter {
             let contact = window.Store.Contact.get(contactId);
             if (!contact) {
                 const wid = window.Store.WidFactory.createUserWid(contactId);
-                const chatConstructor = window.Store.Contact.getModelsArray().find(c=>!c.isGroup).constructor;
-                contact = new chatConstructor({id: wid});
+                const chatConstructor = window.Store.Contact.getModelsArray().find(c => !c.isGroup).constructor;
+                contact = new chatConstructor({ id: wid });
             }
 
             if (contact.commonGroups) {
@@ -1611,7 +1612,7 @@ class Client extends EventEmitter {
 
         return success;
     }
-    
+
     /**
      * Change labels in chats
      * @param {Array<number|string>} labelIds
@@ -1627,12 +1628,12 @@ class Client extends EventEmitter {
             const labels = window.WWebJS.getLabels().filter(e => labelIds.find(l => l == e.id) !== undefined);
             const chats = window.Store.Chat.filter(e => chatIds.includes(e.id._serialized));
 
-            let actions = labels.map(label => ({id: label.id, type: 'add'}));
+            let actions = labels.map(label => ({ id: label.id, type: 'add' }));
 
             chats.forEach(chat => {
                 (chat.labels || []).forEach(n => {
                     if (!actions.find(e => e.id == n)) {
-                        actions.push({id: n, type: 'remove'});
+                        actions.push({ id: n, type: 'remove' });
                     }
                 });
             });
