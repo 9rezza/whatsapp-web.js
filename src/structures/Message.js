@@ -7,6 +7,7 @@ const Order = require('./Order');
 const Payment = require('./Payment');
 const Reaction = require('./Reaction');
 const Contact = require('./Contact');
+const Label = require('./Label');
 const { MessageTypes } = require('../util/Constants');
 
 /**
@@ -22,13 +23,13 @@ class Message extends Base {
 
     _patch(data) {
         this._data = data;
-        
+
         /**
          * MediaKey that represents the sticker 'ID'
          * @type {string}
          */
         this.mediaKey = data.mediaKey;
-        
+
         /**
          * ID that represents the message
          * @type {object}
@@ -110,6 +111,12 @@ class Message extends Base {
          * @type {boolean}
          */
         this.isStatus = data.isStatusV3 || data.id.remote === 'status@broadcast';
+
+        /**
+         * labelIds assigned to this message
+         * @type {string[]}
+         */
+        this.labelIds = data.labels
 
         /**
          * Indicates if the message was starred
@@ -266,7 +273,7 @@ class Message extends Base {
         if (data.latestEditMsgKey) {
             this.latestEditMsgKey = data.latestEditMsgKey;
         }
-        
+
         /**
          * Links included in the message.
          * @type {Array<{link: string, isSuspicious: boolean}>}
@@ -318,12 +325,12 @@ class Message extends Base {
     async reload() {
         const newData = await this.client.pupPage.evaluate((msgId) => {
             const msg = window.Store.Msg.get(msgId);
-            if(!msg) return null;
+            if (!msg) return null;
             return window.WWebJS.getMessageModel(msg);
         }, this.id._serialized);
 
-        if(!newData) return null;
-        
+        if (!newData) return null;
+
         this._patch(newData);
         return this;
     }
@@ -335,7 +342,7 @@ class Message extends Base {
     get rawData() {
         return this._data;
     }
-    
+
     /**
      * Returns the Chat this message was sent in
      * @returns {Promise<Chat>}
@@ -359,7 +366,7 @@ class Message extends Base {
     async getMentions() {
         return await Promise.all(this.mentionedIds.map(async m => await this.client.getContactById(m)));
     }
-    
+
     /**
      * Returns groups mentioned in this message
      * @returns {Promise<GroupChat[]|[]>}
@@ -412,10 +419,10 @@ class Message extends Base {
      * @param {string} reaction - Emoji to react with. Send an empty string to remove the reaction.
      * @return {Promise}
      */
-    async react(reaction){
+    async react(reaction) {
         await this.client.pupPage.evaluate(async (messageId, reaction) => {
             if (!messageId) { return undefined; }
-            
+
             const msg = await window.Store.Msg.get(messageId);
             await window.Store.sendReactionToMsg(msg, reaction);
         }, this.id._serialized, reaction);
@@ -493,7 +500,7 @@ class Message extends Base {
                     filesize: msg.size
                 };
             } catch (e) {
-                if(e.status && e.status === 404) return undefined;
+                if (e.status && e.status === 404) return undefined;
                 throw e;
             }
         }, this.id._serialized);
@@ -510,7 +517,7 @@ class Message extends Base {
         await this.client.pupPage.evaluate(async (msgId, everyone) => {
             let msg = window.Store.Msg.get(msgId);
             let chat = await window.Store.Chat.find(msg.id.remote);
-            
+
             const canRevoke = window.Store.MsgActionChecks.canSenderRevokeMsg(msg) || window.Store.MsgActionChecks.canAdminRevokeMsg(msg);
             if (everyone && canRevoke) {
                 return window.Store.Cmd.sendRevokeMsgs(chat, [msg], { clearMedia: true, type: msg.id.fromMe ? 'Sender' : 'Admin' });
@@ -526,7 +533,7 @@ class Message extends Base {
     async star() {
         await this.client.pupPage.evaluate(async (msgId) => {
             let msg = window.Store.Msg.get(msgId);
-            
+
             if (window.Store.MsgActionChecks.canStarMsg(msg)) {
                 let chat = await window.Store.Chat.find(msg.id.remote);
                 return window.Store.Cmd.sendStarMsgs(chat, [msg], false);
@@ -622,7 +629,7 @@ class Message extends Base {
         if (this.type === MessageTypes.PAYMENT) {
             const msg = await this.client.pupPage.evaluate(async (msgId) => {
                 const msg = window.Store.Msg.get(msgId);
-                if(!msg) return null;
+                if (!msg) return null;
                 return msg.serialize();
             }, this.id._serialized);
             return new Payment(this.client, msg);
@@ -669,6 +676,24 @@ class Message extends Base {
     }
 
     /**
+     * Returns array of all Labels assigned to this Message
+     * @returns {Promise<Array<Label>>}
+     */
+    async getLabels() {
+        let labels = await Promise.all((this.labelIds || []).map(async (labelId) => { return await this.client.getLabelById(labelId) }));
+        return labels.map(label => new Label(this.client, label));
+    }
+
+    /**
+     * Add or remove labels to this Message
+     * @param {Array<number|string>} labelIds
+     * @returns {Promise<void>}
+     */
+    async changeLabels(labelIds) {
+        return this.client.addOrRemoveLabels(labelIds, [this.id._serialized]);
+    }
+
+    /**
      * Edits the current message.
      * @param {string} content
      * @param {MessageEditOptions} [options] - Options used when editing the message
@@ -691,7 +716,7 @@ class Message extends Base {
             groupMentions: options.groupMentions,
             extraOptions: options.extra
         };
-        
+
         if (!this.fromMe) {
             return null;
         }

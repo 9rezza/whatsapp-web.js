@@ -9,7 +9,7 @@ var client = new Client({
     puppeteer: {
         webVersion: '2.2412.50',
         executablePath: 'C:/Program Files/Google/Chrome/Application/chrome.exe',
-        headless: false,
+        headless: true,
         args: [
             '--no-sandbox',
             '--disable-setuid-sandbox',
@@ -36,15 +36,27 @@ client.on('ready', async (percent, message) => {
     // var chat = await client.getChatsByLabelId(1)
     // console.log(chat)
 
-    // var messages = await client.getMessagesStarred()
+    var messages = await client.getMessagesStarred()
     // console.log(messages)
+
+    var messageLabels = await messages[0].getLabels()
+    console.log(messageLabels)
+
+    var chat = await messages[0].getChat()
+    // console.log(chat)
+    
+    var chatLabels = await chat.getLabels()
+    console.log(chatLabels)
+
+    // var label = await this.client.getLabelById("1")
+    // console.log(label)
 });
 
 client.on('qr', (qr) => {
     // NOTE: This event will not be fired if a session is specified.
 
     // console.log('QR RECEIVED', qr);
-    
+
     // qrcode.generate(qr, function (qrcode) {
     //     console.log(qrcode);
     // });

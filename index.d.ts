@@ -846,6 +846,8 @@ declare namespace WAWebJS {
          * The maximum value is 127.
          */
         forwardingScore: number,
+        /** LabelIds assigned to this chat */
+        labelIds: string[],
         /** Indicates if the message was starred */
         isStarred: boolean,
         /** Location information contained in the message, if the message is type "location" */
@@ -964,6 +966,10 @@ declare namespace WAWebJS {
          * Gets the reactions associated with the given message
          */
         getReactions: () => Promise<ReactionList[]>,
+        /** Returns array of all Labels assigned to this Message */
+        getLabels: () => Promise<Label[]>,
+        /** Add or remove labels to this Message */
+        changeLabels: (labelIds: Array<string | number>) => Promise<void>
         /** Edits the current message */
         edit: (content: MessageContent, options?: MessageEditOptions) => Promise<Message | null>,
     }
