@@ -334,6 +334,18 @@ declare namespace WAWebJS {
             reaction: Reaction
         ) => void): this
 
+        /** Emitted when a message label is updated */
+        on(event: 'message_labeling', listener: (
+            /** The message that was affected */
+            message: Message
+        ) => void): this
+
+        /** Emitted when a message star is updated */
+        on(event: 'message_starred', listener: (
+            /** The message that was affected */
+            message: Message
+        ) => void): this
+
         /** Emitted when a chat is removed */
         on(event: 'chat_removed', listener: (
             /** The chat that was removed */
@@ -348,6 +360,12 @@ declare namespace WAWebJS {
             currState: boolean,
             /** State the chat was previously in */
             prevState: boolean
+        ) => void): this
+
+        /** Emitted when a chat label is updated */
+        on(event: 'chat_labeling', listener: (
+            /** The chat that was affected */
+            chat: Chat
         ) => void): this
 
         /** Emitted when loading screen is appearing */
