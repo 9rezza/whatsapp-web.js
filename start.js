@@ -2,14 +2,14 @@ const { Client, Location, Poll, List, Buttons, LocalAuth } = require('./index');
 const fs = require('fs')
 const qrcode = require('qrcode-terminal');
 
-var sessionPath = 'C:/Users/rezza/OneDrive/Documents/shopmatic/whatsapp/1234'
+var client = '123456'
+var sessionPath = 'C:/Users/rezza/OneDrive/Documents/shopmatic/whatsapp/' + client
 var client = new Client({
     // authStrategy: new LocalAuth(),
     // proxyAuthentication: { username: 'username', password: 'password' },
     puppeteer: {
-        webVersion: '2.2412.50',
         executablePath: 'C:/Program Files/Google/Chrome/Application/chrome.exe',
-        headless: true,
+        headless: false,
         args: [
             '--no-sandbox',
             '--disable-setuid-sandbox',
@@ -21,7 +21,7 @@ var client = new Client({
             '--disable-gpu'
         ],
     },
-    authStrategy: new LocalAuth({ clientId: '1234', dataPath: sessionPath })
+    authStrategy: new LocalAuth({ clientId: client, dataPath: sessionPath })
 });
 
 client.initialize();
@@ -33,20 +33,23 @@ client.on('loading_screen', (percent, message) => {
 client.on('ready', async (percent, message) => {
     console.log('READY', percent, message);
 
+    var state = await client.getState()
+    console.log(state)
+
     // var chat = await client.getChatsByLabelId(1)
     // console.log(chat)
 
-    var messages = await client.getMessagesStarred()
+    // var messages = await client.getMessagesStarred()
     // console.log(messages)
 
-    var messageLabels = await messages[0].getLabels()
-    console.log(messageLabels)
+    // var messageLabels = await messages[0].getLabels()
+    // console.log(messageLabels)
 
-    var chat = await messages[0].getChat()
+    // var chat = await messages[0].getChat()
     // console.log(chat)
-    
-    var chatLabels = await chat.getLabels()
-    console.log(chatLabels)
+
+    // var chatLabels = await chat.getLabels()
+    // console.log(chatLabels)
 
     // var label = await this.client.getLabelById("1")
     // console.log(label)
@@ -64,34 +67,6 @@ client.on('qr', (qr) => {
 
 client.on('message', async msg => {
     // console.log('MESSAGE RECEIVED', msg);
-    if (msg.body == 'restart') {
-        const pages = await client.pupBrowser.pages()
-        await Promise.all(pages.map((page) => page.close()))
-        await client.pupBrowser.close()
-
-        sessionPath = 'C:/Users/rezza/OneDrive/Documents/shopmatic/whatsapp/1234'
-        client = new Client({
-            // authStrategy: new LocalAuth(),
-            // proxyAuthentication: { username: 'username', password: 'password' },
-            puppeteer: {
-                executablePath: 'C:/Program Files/Google/Chrome/Application/chrome.exe',
-                headless: false,
-                args: [
-                    '--no-sandbox',
-                    '--disable-setuid-sandbox',
-                    '--disable-dev-shm-usage',
-                    '--disable-accelerated-2d-canvas',
-                    '--no-first-run',
-                    '--no-zygote',
-                    // '--single-process',
-                    '--disable-gpu'
-                ],
-            },
-            authStrategy: new LocalAuth({ clientId: '1234', dataPath: sessionPath })
-        });
-
-        client.initialize();
-    }
     if (msg.body == 'getLabels') {
         var labels = await client.getLabels()
         labels.forEach((label) => {
